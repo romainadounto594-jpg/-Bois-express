@@ -1,0 +1,6 @@
+{
+  "name": "Bois de chauffage | Weyland Parcs & Jardins",
+  "description": "Commandez votre bois de chauffage en ligne : bûches, granulés, bûches compressées. Livraison rapide et produits de qualité.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

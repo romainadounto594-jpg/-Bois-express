@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #fc8920;
+  --color-brand-secondary: #292929;
+  --color-brand-text: #595959;
+  --font-sans: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: "Montserrat", system-ui, sans-serif;
+    color: #595959;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #ffffff;
+    overflow-x: hidden;
+  }
+}
