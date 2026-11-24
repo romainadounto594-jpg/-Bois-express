@@ -77,3 +77,56 @@ export interface CookiePreferences {
   video: boolean;
   updatedAt: string;
 }
+
+export interface ShippingAddress {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  notes?: string;
+}
+
+export interface UserAccount {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  createdAt: string;
+}
+
+export type PaymentMethod = 'card' | 'transfer' | 'cod';
+export type DeliveryMethod = 'home' | 'pickup';
+
+export interface OrderLineItem {
+  productId: string;
+  slug: string;
+  title: string;
+  image: string;
+  unitPrice: number;
+  priceSuffix: string;
+  quantity: number;
+}
+
+export interface SimulatedOrder {
+  id: string;
+  orderNumber: string;
+  userId: string | null;
+  createdAt: string;
+  items: OrderLineItem[];
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+  deliveryMethod: DeliveryMethod;
+  paymentMethod: PaymentMethod;
+  cardLast4?: string;
+  shippingAddress: ShippingAddress;
+  status: 'Payée (Simulation)' | 'En attente de virement (Simulation)' | 'Paiement à la livraison';
+}
+

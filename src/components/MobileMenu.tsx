@@ -1,7 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, Phone, Mail, MapPin } from 'lucide-react';
+import { X, Phone, Mail, MapPin, UserCircle } from 'lucide-react';
 import { COMPANY_INFO, MAIN_NAV_ITEMS } from '../data/navigation';
+import { useAuth } from '../hooks/useAuth';
 import { BrandLogo } from './BrandLogo';
 
 interface MobileMenuProps {
@@ -10,6 +11,8 @@ interface MobileMenuProps {
 }
 
 export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
+  const { user } = useAuth();
+
   if (!isOpen) return null;
 
   return (
@@ -57,6 +60,20 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
               }
             >
               Panier
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/mon-compte"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 py-3.5 px-2 text-[16px] font-medium transition-colors ${
+                  isActive ? 'text-[#FC8920]' : 'text-white hover:text-[#FC8920]'
+                }`
+              }
+            >
+              <UserCircle className="w-5 h-5 text-[#FC8920]" />
+              <span>{user ? `Mon compte (${user.firstName})` : 'Connexion / Inscription'}</span>
             </NavLink>
           </li>
           <li>

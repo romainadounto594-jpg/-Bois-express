@@ -146,7 +146,7 @@ export const CartDrawer: React.FC = () => {
                 Voir le panier
               </Link>
               <Link
-                to="/panier"
+                to="/commander"
                 onClick={closeDrawer}
                 className="w-full py-2.5 text-center bg-[#FC8920] hover:bg-[#292929] text-white text-[14px] font-semibold rounded transition-colors"
               >

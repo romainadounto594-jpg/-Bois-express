@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
+import { AuthProvider } from './context/AuthContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
@@ -20,6 +21,7 @@ import { Cart } from './pages/Cart';
 import { ZonesLivraison } from './pages/ZonesLivraison';
 import { Legal } from './pages/Legal';
 import { Account } from './pages/Account';
+import { Checkout } from './pages/Checkout';
 
 const TRANSPARENT_NAV_PATHS = new Set([
   '/',
@@ -83,6 +85,7 @@ const AppShell: React.FC = () => {
 
           <Route path="/contact" element={<Contact />} />
           <Route path="/panier" element={<Cart />} />
+          <Route path="/commander" element={<Checkout />} />
           <Route path="/zones-de-livraison" element={<ZonesLivraison />} />
           <Route path="/mon-compte" element={<Account />} />
 
@@ -141,9 +144,11 @@ const AppShell: React.FC = () => {
 export default function App() {
   return (
     <BrowserRouter>
-      <CartProvider>
-        <AppShell />
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <AppShell />
+        </CartProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

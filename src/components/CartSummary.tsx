@@ -1,47 +1,17 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, Truck } from 'lucide-react';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertTriangle, Truck } from 'lucide-react';
 import { formatPrice } from '../context/CartContext';
 import { useCart } from '../hooks/useCart';
 
-interface CartSummaryProps {
-  onCheckoutSuccess?: () => void;
-}
+export const CartSummary: React.FC = () => {
+  const { items, subtotal, hasOrderConflict } = useCart();
+  const navigate = useNavigate();
 
-export const CartSummary: React.FC<CartSummaryProps> = ({ onCheckoutSuccess }) => {
-  const { items, subtotal, hasOrderConflict, clearCart } = useCart();
-  const [orderSubmitted, setOrderSubmitted] = useState(false);
-
-  const handleValidateOrder = () => {
+  const handleGoToCheckout = () => {
     if (hasOrderConflict || items.length === 0) return;
-    setOrderSubmitted(true);
-    clearCart();
-    if (onCheckoutSuccess) {
-      onCheckoutSuccess();
-    }
+    navigate('/commander');
   };
-
-  if (orderSubmitted) {
-    return (
-      <div className="border border-[#d5d5d5] rounded-[10px] p-6 bg-[#f7f7f7]">
-        <div className="flex items-start gap-3 text-[#292929] mb-3">
-          <CheckCircle2 className="w-6 h-6 text-[#FC8920] shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-[18px] font-bold">Demande de commande enregistrée</h3>
-            <p className="text-[14px] text-[#595959] mt-1">
-              Votre panier a bien été validé en simulation locale. Pour finaliser une commande réelle et convenir d’un créneau de livraison, contactez Bois express au 03 87 13 38 12.
-            </p>
-          </div>
-        </div>
-        <Link
-          to="/boutique"
-          className="inline-block mt-3 px-5 py-2.5 bg-[#FC8920] hover:bg-[#292929] text-white font-semibold text-[14px] rounded transition-colors"
-        >
-          Retourner à la boutique
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="border border-[#d5d5d5] rounded-[10px] p-6 bg-[#f7f7f7]">
@@ -97,7 +67,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({ onCheckoutSuccess }) =
       <div className="mt-5 space-y-3">
         <button
           type="button"
-          onClick={handleValidateOrder}
+          onClick={handleGoToCheckout}
           disabled={items.length === 0 || hasOrderConflict}
           className="w-full py-3 px-5 bg-[#FC8920] hover:bg-[#292929] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-[15px] rounded transition-colors cursor-pointer"
         >

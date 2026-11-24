@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, UserCircle, ShoppingCart, Menu } from 'lucide-react';
 import { COMPANY_INFO, TOP_ANNOUNCEMENT } from '../data/navigation';
 import { useCart } from '../hooks/useCart';
+import { useAuth } from '../hooks/useAuth';
 import { formatPrice } from '../context/CartContext';
 import { Navbar } from './Navbar';
 import { MobileMenu } from './MobileMenu';
@@ -15,6 +16,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ transparentNav = false }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { totalItems, subtotal, openDrawer } = useCart();
+  const { user } = useAuth();
 
   return (
     <header className="relative z-40 w-full">
@@ -71,9 +73,12 @@ export const Header: React.FC<HeaderProps> = ({ transparentNav = false }) => {
             <Link
               to="/mon-compte"
               aria-label="Mon compte"
-              className="text-white hover:text-[#FC8920] transition-colors p-1"
+              className="flex items-center gap-1.5 text-white hover:text-[#FC8920] transition-colors p-1 text-[13px] font-medium"
             >
-              <UserCircle className="w-7 h-7" />
+              <UserCircle className="w-6 h-6 shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap">
+                {user ? user.firstName : 'Connexion'}
+              </span>
             </Link>
 
             <button
