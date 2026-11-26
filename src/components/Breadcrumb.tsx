@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../hooks/useLanguage';
 
 export interface BreadcrumbSegment {
   label: string;
@@ -17,6 +18,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
   align = 'right',
   light = true,
 }) => {
+  const { t } = useLanguage();
   const alignClass =
     align === 'right'
       ? 'justify-end text-right'
@@ -26,7 +28,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
 
   return (
     <nav
-      aria-label="Fil d'Ariane"
+      aria-label={t.common.breadcrumbAria}
       className={`flex flex-wrap items-center gap-1.5 text-[14px] ${alignClass} ${
         light ? 'text-white/90' : 'text-[#595959]'
       }`}

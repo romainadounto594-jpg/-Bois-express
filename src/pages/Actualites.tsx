@@ -1,34 +1,44 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { NEWS_ARTICLES } from '../data/articles';
+import { getLocalizedArticles } from '../data/i18nArticles';
 import { PageBanner } from '../components/PageBanner';
+import { useLanguage } from '../hooks/useLanguage';
+
+const ALL_CATEGORIES = 'ALL';
 
 export const Actualites: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('Tous');
+  const { language, t } = useLanguage();
+  const [selectedCategory, setSelectedCategory] = useState<string>(ALL_CATEGORIES);
+
+  useEffect(() => {
+    setSelectedCategory(ALL_CATEGORIES);
+  }, [language]);
+
+  const articles = useMemo(() => getLocalizedArticles(language), [language]);
 
   const categories = useMemo(
-    () => ['Tous', ...Array.from(new Set(NEWS_ARTICLES.map((a) => a.category)))],
-    []
+    () => [ALL_CATEGORIES, ...Array.from(new Set(articles.map((a) => a.category)))],
+    [articles]
   );
 
   const visibleArticles = useMemo(
     () =>
-      selectedCategory === 'Tous'
-        ? NEWS_ARTICLES
-        : NEWS_ARTICLES.filter((a) => a.category === selectedCategory),
-    [selectedCategory]
+      selectedCategory === ALL_CATEGORIES
+        ? articles
+        : articles.filter((a) => a.category === selectedCategory),
+    [articles, selectedCategory]
   );
 
   return (
     <div>
       <PageBanner
-        title="Actualités"
+        title={t.news.bannerTitle}
         titleColor="white"
         align="center"
         backgroundImage="/images/articles/allumage-dun-feu-a-laide-dune-buche-de-bois-compresse-768x512.jpg"
         breadcrumbs={[
-          { label: 'Accueil', path: '/' },
-          { label: 'Actualités' },
+          { label: t.common.home, path: '/' },
+          { label: t.news.bannerTitle },
         ]}
       />
 
@@ -45,7 +55,7 @@ export const Actualites: React.FC = () => {
                   : 'bg-[#f7f7f7] text-[#292929] hover:bg-[#e9e9e9]'
               }`}
             >
-              {cat}
+              {cat === ALL_CATEGORIES ? t.news.allCategories : cat}
             </button>
           ))}
         </div>
@@ -94,7 +104,7 @@ export const Actualites: React.FC = () => {
                   to={`/actualites/${article.slug}`}
                   className="text-[14px] font-semibold text-[#FC8920] hover:text-[#292929] transition-colors self-start"
                 >
-                  Lire la suite »
+                  {t.news.readMore}
                 </Link>
               </div>
             </article>

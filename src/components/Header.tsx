@@ -4,10 +4,12 @@ import { MapPin, Phone, Mail, UserCircle, ShoppingCart, Menu } from 'lucide-reac
 import { COMPANY_INFO, TOP_ANNOUNCEMENT } from '../data/navigation';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../hooks/useLanguage';
 import { formatPrice } from '../context/CartContext';
 import { Navbar } from './Navbar';
 import { MobileMenu } from './MobileMenu';
 import { BrandLogo } from './BrandLogo';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface HeaderProps {
   transparentNav?: boolean;
@@ -17,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({ transparentNav = false }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { totalItems, subtotal, openDrawer } = useCart();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   return (
     <header className="relative z-40 w-full">
@@ -27,15 +30,15 @@ export const Header: React.FC<HeaderProps> = ({ transparentNav = false }) => {
             to={TOP_ANNOUNCEMENT.path}
             className="text-black font-medium text-[14px] sm:text-[17px] leading-snug hover:underline inline-block"
           >
-            {TOP_ANNOUNCEMENT.text}
+            {t.header.announcement}
           </Link>
         </div>
       </div>
 
-      {/* Row 2: Dark contact + account + cart utility bar */}
+      {/* Row 2: Dark contact + language + account + cart utility bar */}
       <div className="bg-[#292929] w-full">
-        <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-1.5 flex flex-wrap items-center justify-end gap-x-6 gap-y-2">
-          <ul className="hidden md:flex items-center gap-6 lg:gap-10 text-[14px] text-white">
+        <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-1.5 flex flex-wrap items-center justify-end gap-x-4 sm:gap-x-6 gap-y-2">
+          <ul className="hidden md:flex items-center gap-6 lg:gap-8 text-[14px] text-white">
             <li className="flex items-center gap-2 whitespace-nowrap">
               <MapPin className="w-3.5 h-3.5 text-[#FC8920] shrink-0" />
               <span>{COMPANY_INFO.fullAddress}</span>
@@ -69,22 +72,24 @@ export const Header: React.FC<HeaderProps> = ({ transparentNav = false }) => {
             <span>{COMPANY_INFO.phoneDisplay}</span>
           </a>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <LanguageSwitcher variant="dropdown" />
+
             <Link
               to="/mon-compte"
-              aria-label="Mon compte"
+              aria-label={t.header.myAccount}
               className="flex items-center gap-1.5 text-white hover:text-[#FC8920] transition-colors p-1 text-[13px] font-medium"
             >
               <UserCircle className="w-6 h-6 shrink-0" />
               <span className="hidden sm:inline whitespace-nowrap">
-                {user ? user.firstName : 'Connexion'}
+                {user ? user.firstName : t.header.login}
               </span>
             </Link>
 
             <button
               type="button"
               onClick={openDrawer}
-              aria-label="Ouvrir le panier"
+              aria-label={t.header.openCart}
               className="flex items-center gap-2.5 text-white hover:text-[#FC8920] transition-colors py-1.5 px-2 cursor-pointer group"
             >
               <span className="text-[14px] font-medium tabular-nums">
@@ -112,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({ transparentNav = false }) => {
         <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
           <Link
             to="/"
-            aria-label="Accueil Bois express"
+            aria-label={t.header.homeAria}
             className="shrink-0"
           >
             <BrandLogo variant="horizontal" />
@@ -124,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({ transparentNav = false }) => {
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              aria-label="Permuter le menu"
+              aria-label={t.header.toggleMenu}
               className="lg:hidden bg-[#292929] text-white hover:text-[#FC8920] p-2.5 rounded border border-white/15 transition-colors cursor-pointer"
             >
               <Menu className="w-6 h-6" />

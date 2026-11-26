@@ -1,31 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Info } from 'lucide-react';
-import { PRODUCTS } from '../data/products';
+import { useLanguage } from '../hooks/useLanguage';
+import { getLocalizedProducts } from '../data/i18nProducts';
 import { ProductGrid } from '../components/ProductGrid';
-
-const CATEGORY_CARDS = [
-  {
-    title: 'BOIS',
-    image: '/images/cat-bois.webp',
-    path: '/type-de-chauffage/bois',
-  },
-  {
-    title: 'BRIQUETTES',
-    image: '/images/cat-briquettes.webp',
-    path: '/type-de-chauffage/briquettes',
-  },
-  {
-    title: 'PELLETS',
-    image: '/images/cat-pellets.webp',
-    path: '/type-de-chauffage/pellets',
-  },
-  {
-    title: 'ALLUMAGE',
-    image: '/images/cat-allumage.webp',
-    path: '/type-de-chauffage/allumage',
-  },
-];
 
 const FEATURED_SLUGS = [
   'bois-de-chauffage-sec-en-vrac-longueur-33-ou-50-cm-essences-calorifiques',
@@ -35,8 +13,34 @@ const FEATURED_SLUGS = [
 ];
 
 export const Home: React.FC = () => {
+  const { language, t } = useLanguage();
+
+  const categoryCards = [
+    {
+      title: t.home.catBois,
+      image: '/images/cat-bois.webp',
+      path: '/type-de-chauffage/bois',
+    },
+    {
+      title: t.home.catBriquettes,
+      image: '/images/cat-briquettes.webp',
+      path: '/type-de-chauffage/briquettes',
+    },
+    {
+      title: t.home.catPellets,
+      image: '/images/cat-pellets.webp',
+      path: '/type-de-chauffage/pellets',
+    },
+    {
+      title: t.home.catAllumage,
+      image: '/images/cat-allumage.webp',
+      path: '/type-de-chauffage/allumage',
+    },
+  ];
+
+  const localizedProducts = getLocalizedProducts(language);
   const featuredProducts = FEATURED_SLUGS.map((slug) =>
-    PRODUCTS.find((p) => p.slug === slug)
+    localizedProducts.find((p) => p.slug === slug)
   ).filter((p): p is NonNullable<typeof p> => Boolean(p));
 
   return (
@@ -49,7 +53,7 @@ export const Home: React.FC = () => {
         <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
         <div className="relative z-10 max-w-[1140px] mx-auto text-center">
           <h1 className="text-[34px] sm:text-[46px] lg:text-[54px] font-semibold text-white tracking-tight">
-            Bois express
+            {t.home.heroTitle}
           </h1>
           <div className="w-[240px] sm:w-[300px] h-[2px] bg-white mx-auto mt-4" />
         </div>
@@ -58,9 +62,9 @@ export const Home: React.FC = () => {
       {/* 4 Category Call-To-Action Cards overlapping Hero */}
       <section className="max-w-[1600px] mx-auto px-4 lg:px-8 -mt-[85px] sm:-mt-[100px] relative z-20">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {CATEGORY_CARDS.map((card) => (
+          {categoryCards.map((card) => (
             <Link
-              key={card.title}
+              key={card.path}
               to={card.path}
               className="group relative block h-[250px] overflow-hidden shadow-md"
             >
@@ -74,7 +78,7 @@ export const Home: React.FC = () => {
                   {card.title}
                 </h2>
                 <span className="inline-block bg-[#FC8920] text-white text-[14px] font-semibold px-5 py-2.5 rounded-sm transition-transform duration-300 group-hover:scale-105">
-                  Voir les produits
+                  {t.home.viewProducts}
                 </span>
               </div>
             </Link>
@@ -86,24 +90,19 @@ export const Home: React.FC = () => {
       <section className="my-14 sm:my-16 px-4">
         <div className="max-w-[920px] mx-auto text-center">
           <p className="text-[18px] font-black text-[#292929]">
-            Qui sommes-nous ?
+            {t.home.aboutEyebrow}
           </p>
           <h2 className="text-[28px] sm:text-[34px] font-semibold text-[#292929] uppercase mt-1 mb-5">
-            Présentation
+            {t.home.aboutTitle}
           </h2>
           <p className="text-[16px] font-normal text-[#595959] leading-[1.75] mb-8">
-            Bois express vous présente sa gamme de bois de chauffage,
-            pellets, briquettes et bois d’allumage de 1er choix. Nos bois sont choisis
-            en fonction de leurs performances, c’est pourquoi vous trouverez
-            essentiellement des bois durs : le chêne, le charme, le hêtre et le frêne.
-            Vous assurerez ainsi une chaleur saine, constante, idéale. Respectueux de
-            l’environnement, ils ne contiennent aucun produit chimique.
+            {t.home.aboutText}
           </p>
           <Link
             to="/boutique"
             className="inline-block bg-[#FC8920] hover:bg-[#292929] text-black hover:text-white font-extrabold text-[15px] uppercase px-7 py-3.5 rounded-sm transition-colors duration-200"
           >
-            Découvrir notre catalogue
+            {t.home.discoverCatalog}
           </Link>
         </div>
       </section>
@@ -112,10 +111,10 @@ export const Home: React.FC = () => {
       <section className="py-10 px-4 sm:px-6 max-w-[1140px] mx-auto border-t border-[#e9e9e9]">
         <div className="text-center mb-8">
           <p className="text-[15px] font-bold text-[#FC8920] uppercase tracking-wide">
-            Sélection Bois express
+            {t.home.featuredEyebrow}
           </p>
           <h2 className="text-[26px] sm:text-[30px] font-semibold text-[#292929] mt-1">
-            Produits phares
+            {t.home.featuredTitle}
           </h2>
         </div>
 
@@ -125,15 +124,13 @@ export const Home: React.FC = () => {
         <div className="mt-10 bg-white border border-[#d5d5d5] shadow-sm p-5 sm:p-6 max-w-[780px] mx-auto">
           <div className="inline-flex items-center gap-2 bg-[#FC8920] text-black font-extrabold text-[17px] sm:text-[20px] px-3 py-1.5 mb-3">
             <Info className="w-5 h-5 shrink-0" />
-            <span>Information sur les commandes</span>
+            <span>{t.common.orderNoticeTitle}</span>
           </div>
           <p className="text-[15px] font-semibold text-[#292929] mb-2">
-            Merci de prendre en compte les indications suivantes avant de passer commande sur le site :
+            {t.common.orderNoticeIntro}
           </p>
           <ul className="list-disc pl-5 text-[15px] font-medium text-[#292929]">
-            <li>
-              Les commandes de pellets et de bois en vrac ne peuvent pas faire parties de la même commande. Il faudra passer 2 commandes le cas échéant
-            </li>
+            <li>{t.common.orderNoticeRule}</li>
           </ul>
         </div>
       </section>
@@ -162,12 +159,12 @@ export const Home: React.FC = () => {
               <path d="M106.5,85.823H90.375a1.75,1.75,0,0,0,0,3.5H106.5a1.75,1.75,0,0,0,0-3.5Z" />
             </svg>
             <h3 className="text-[20px] font-semibold text-white uppercase tracking-wide mb-2">
-              BOIS DE CHAUFFAGE
+              {t.home.deliveryLeftTitle}
             </h3>
             <p className="text-[16px] text-white leading-relaxed">
-              Le bois de chauffage en vrac est
+              {t.home.deliveryLeftLine1}
               <br />
-              livré avec un camion BENNE 7.5 T
+              {t.home.deliveryLeftLine2}
             </p>
           </div>
         </div>
@@ -188,12 +185,12 @@ export const Home: React.FC = () => {
               <path d="m501.5 418.1h-94.4c-3.8-14-11.6-26.4-22.1-35.9v-373.3c0-5.8-4.7-10.5-10.5-10.5 0 0 0 0-.1 0-29.5 0-53.4 24-53.4 53.5v133.2c0 37.5 15.6 73 43 98.4v85.1c-6.1-2.6-12.5-4.5-19.2-5.4v-7.6c0-21.8-17.7-39.5-39.5-39.5h-4.2l-70.2-220.8h32.7c5.8 0 10.5-4.7 10.5-10.5s-4.7-10.5-10.5-10.5h-158.2c-22.2 0-41.1 16.6-43.8 38.7l-18.9 153.5c-1.2.5-2.3 1.2-3.2 2.2l-27.9 27.9c-7.5 7.4-11.6 17.3-11.6 27.9v104.6c0 21.8 17.7 39.5 39.5 39.5h4.2c11.8 26.5 38.3 45 69.1 45s57.3-18.5 69.1-45h83.4c11.8 26.5 38.3 45 69.1 45 41.3 0 74.9-33.3 75.5-74.5h91.7c5.8 0 10.5-4.7 10.5-10.5-.1-5.8-4.8-10.5-10.6-10.5zm-159.5-233v-133.2c0-14.2 9.2-26.3 21.9-30.7v231c-14.1-19.3-21.9-42.7-21.9-67.1zm-218.8-89.8h85.6l70.2 220.9h-47.2c-11.9 0-23.4-4.2-32.6-11.7l-27.2-22.4c-12.9-10.6-29.2-16.5-45.9-16.5h-3zm-40.8 20.1c1.3-10.5 9.5-18.5 19.8-19.9v170h-38.2zm30.3 377.2c-30.1 0-54.5-24.5-54.5-54.6s24.5-54.6 54.5-54.6c30.1 0 54.6 24.5 54.6 54.6s-24.5 54.6-54.6 54.6zm146.6-45.1h-71.7c.4-3.1.7-6.3.7-9.5 0-41.7-33.9-75.6-75.6-75.6s-75.6 33.9-75.6 75.6c0 3.2.3 6.3.6 9.3-9.4-.9-16.7-8.7-16.7-18.3v-104.5c0-4.9 1.9-9.5 5.4-13l24.8-24.8h74.9c11.9 0 23.4 4.2 32.6 11.7l27.2 22.4c12.9 10.6 29.2 16.5 45.9 16.5h73.4c10.2 0 18.4 8.3 18.4 18.4v7.6c-36.7 5.1-65.1 36.7-65.1 74.8.1 3.2.4 6.3.8 9.4zm74.9 45.1c-30.1 0-54.5-24.5-54.5-54.6s24.5-54.6 54.5-54.6c30.1 0 54.6 24.5 54.6 54.6s-24.5 54.6-54.6 54.6z" />
             </svg>
             <h3 className="text-[20px] font-semibold text-white uppercase tracking-wide mb-2">
-              LIVRAISON DES PALETTES
+              {t.home.deliveryRightTitle}
             </h3>
             <p className="text-[16px] text-white leading-relaxed">
-              Nous livrons les palettes à l’aide d’un
+              {t.home.deliveryRightLine1}
               <br />
-              camion 19T avec hayon élévateur
+              {t.home.deliveryRightLine2}
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { LEGAL_PAGES } from '../data/legal';
+import { getLocalizedLegalPage } from '../data/i18nLegal';
+import { useLanguage } from '../hooks/useLanguage';
 import { PageBanner } from '../components/PageBanner';
 
 interface LegalProps {
@@ -9,7 +10,8 @@ interface LegalProps {
 }
 
 export const Legal: React.FC<LegalProps> = ({ pageKey, onOpenCookieSettings }) => {
-  const page = LEGAL_PAGES[pageKey];
+  const { language, t } = useLanguage();
+  const page = getLocalizedLegalPage(pageKey, language);
 
   return (
     <div>
@@ -17,7 +19,7 @@ export const Legal: React.FC<LegalProps> = ({ pageKey, onOpenCookieSettings }) =
         title={page.title}
         backgroundImage="/images/cat-allumage.webp"
         breadcrumbs={[
-          { label: 'Accueil', path: '/' },
+          { label: t.common.home, path: '/' },
           { label: page.breadcrumbLabel },
         ]}
       />
@@ -45,23 +47,23 @@ export const Legal: React.FC<LegalProps> = ({ pageKey, onOpenCookieSettings }) =
               onClick={onOpenCookieSettings}
               className="px-6 py-2.5 bg-[#FC8920] hover:bg-[#292929] text-white font-semibold text-[14px] rounded transition-colors cursor-pointer"
             >
-              Ouvrir le panneau de gestion des cookies
+              {t.legal.openCookieSettings}
             </button>
           </div>
         )}
 
         <div className="mt-10 pt-6 border-t border-[#dcdcdc] flex flex-wrap gap-4 text-[14px]">
           <Link to="/mentions-legales" className="text-[#FC8920] hover:underline">
-            Mentions légales
+            {t.legal.mentionsLegales}
           </Link>
           <Link to="/protection-des-donnees" className="text-[#FC8920] hover:underline">
-            Protection des données
+            {t.legal.protectionDonnees}
           </Link>
           <Link to="/conditions-dutilisation" className="text-[#FC8920] hover:underline">
-            Conditions d’utilisation
+            {t.legal.cgu}
           </Link>
           <Link to="/conditions-generales-de-vente" className="text-[#FC8920] hover:underline">
-            Conditions générales de vente
+            {t.legal.cgv}
           </Link>
         </div>
       </section>

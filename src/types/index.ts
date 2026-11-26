@@ -1,3 +1,5 @@
+export type LanguageCode = 'fr' | 'en' | 'de' | 'es';
+
 export type ProductCategorySlug =
   | 'bois'
   | 'briquettes'

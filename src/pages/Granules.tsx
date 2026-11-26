@@ -1,9 +1,11 @@
 import React from 'react';
-import { CATEGORIES_META, getProductsByCategory } from '../data/products';
+import { getLocalizedCategoryMeta, getLocalizedProductsByCategory } from '../data/i18nProducts';
+import { useLanguage } from '../hooks/useLanguage';
 import { CategoryLayout } from '../components/CategoryLayout';
 
 export const Granules: React.FC = () => {
-  const meta = CATEGORIES_META['granules-de-bois'];
-  const products = getProductsByCategory('granules-de-bois');
+  const { language } = useLanguage();
+  const meta = getLocalizedCategoryMeta('granules-de-bois', language);
+  const products = getLocalizedProductsByCategory('granules-de-bois', language);
   return <CategoryLayout meta={meta} products={products} />;
 };

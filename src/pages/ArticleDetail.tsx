@@ -1,30 +1,34 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { getArticleBySlug, NEWS_ARTICLES } from '../data/articles';
+import { getLocalizedArticleBySlug, getLocalizedArticles } from '../data/i18nArticles';
 import { PageBanner } from '../components/PageBanner';
+import { useLanguage } from '../hooks/useLanguage';
 
 export const ArticleDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const article = slug ? getArticleBySlug(slug) : undefined;
+  const { language, t } = useLanguage();
+  const article = slug ? getLocalizedArticleBySlug(slug, language) : undefined;
 
   if (!article) {
     return (
       <div className="max-w-[900px] mx-auto px-4 py-20 text-center">
         <h1 className="text-[28px] font-semibold text-[#292929] mb-4">
-          Article introuvable
+          {t.news.notFoundTitle}
         </h1>
         <Link
           to="/actualites"
           className="inline-block px-6 py-3 bg-[#FC8920] hover:bg-[#292929] text-white font-semibold rounded transition-colors"
         >
-          Retour aux actualités
+          {t.news.backToNews}
         </Link>
       </div>
     );
   }
 
-  const otherArticles = NEWS_ARTICLES.filter((a) => a.slug !== article.slug).slice(0, 3);
+  const otherArticles = getLocalizedArticles(language)
+    .filter((a) => a.slug !== article.slug)
+    .slice(0, 3);
 
   return (
     <div>
@@ -34,8 +38,8 @@ export const ArticleDetail: React.FC = () => {
         align="center"
         backgroundImage={article.image}
         breadcrumbs={[
-          { label: 'Accueil', path: '/' },
-          { label: 'Actualités', path: '/actualites' },
+          { label: t.common.home, path: '/' },
+          { label: t.news.bannerTitle, path: '/actualites' },
           { label: article.category },
         ]}
       />
@@ -53,7 +57,7 @@ export const ArticleDetail: React.FC = () => {
             className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#292929] hover:text-[#FC8920] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Toutes les actualités
+            {t.news.allNews}
           </Link>
         </div>
 
@@ -82,7 +86,7 @@ export const ArticleDetail: React.FC = () => {
 
         <div className="mt-12 pt-8 border-t border-[#dcdcdc]">
           <h3 className="text-[20px] font-semibold text-[#292929] mb-5">
-            Articles récents
+            {t.news.recentArticles}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {otherArticles.map((item) => (

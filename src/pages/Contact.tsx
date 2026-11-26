@@ -3,13 +3,16 @@ import { Link } from 'react-router-dom';
 import { Phone, MapPin, Mail, CheckCircle2 } from 'lucide-react';
 import { COMPANY_INFO } from '../data/navigation';
 import { PageBanner } from '../components/PageBanner';
+import { useLanguage } from '../hooks/useLanguage';
+
+type RequestType = 'product' | 'quote' | 'other';
 
 interface ContactFormState {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  requestType: string;
+  requestType: RequestType;
   subjectDetail: string;
   message: string;
   consent: boolean;
@@ -20,34 +23,35 @@ const INITIAL_FORM: ContactFormState = {
   lastName: '',
   email: '',
   phone: '',
-  requestType: 'Informations sur un produit',
+  requestType: 'product',
   subjectDetail: '',
   message: '',
   consent: false,
 };
 
 export const Contact: React.FC = () => {
+  const { t } = useLanguage();
   const [form, setForm] = useState<ContactFormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFormState, string>>>({});
   const [submitted, setSubmitted] = useState(false);
 
   const validate = (): boolean => {
     const nextErrors: Partial<Record<keyof ContactFormState, string>> = {};
-    if (!form.firstName.trim()) nextErrors.firstName = 'Veuillez saisir votre prénom.';
-    if (!form.lastName.trim()) nextErrors.lastName = 'Veuillez saisir votre nom.';
+    if (!form.firstName.trim()) nextErrors.firstName = t.contact.errFirstName;
+    if (!form.lastName.trim()) nextErrors.lastName = t.contact.errLastName;
     if (!form.email.trim()) {
-      nextErrors.email = 'Veuillez saisir votre adresse email.';
+      nextErrors.email = t.contact.errEmailMissing;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      nextErrors.email = 'Adresse email invalide.';
+      nextErrors.email = t.contact.errEmailInvalid;
     }
     if (!form.phone.trim()) {
-      nextErrors.phone = 'Veuillez saisir votre numéro de téléphone.';
+      nextErrors.phone = t.contact.errPhone;
     }
     if (!form.message.trim() || form.message.trim().length < 10) {
-      nextErrors.message = 'Veuillez rédiger votre message (10 caractères minimum).';
+      nextErrors.message = t.contact.errMessage;
     }
     if (!form.consent) {
-      nextErrors.consent = 'Vous devez accepter les conditions d’utilisation et la politique de confidentialité.';
+      nextErrors.consent = t.contact.errConsent;
     }
 
     setErrors(nextErrors);
@@ -65,11 +69,11 @@ export const Contact: React.FC = () => {
   return (
     <div>
       <PageBanner
-        title="Contact"
+        title={t.contact.bannerTitle}
         backgroundImage="/images/cat-allumage.webp"
         breadcrumbs={[
-          { label: 'Accueil', path: '/' },
-          { label: 'Contact' },
+          { label: t.common.home, path: '/' },
+          { label: t.contact.bannerTitle },
         ]}
       />
 
@@ -103,10 +107,10 @@ export const Contact: React.FC = () => {
       <section className="max-w-[820px] mx-auto px-4 py-8 mb-10">
         <div className="text-center mb-8">
           <p className="text-[20px] font-medium text-[#FC8920]">
-            Une question ? Une demande ?
+            {t.contact.eyebrow}
           </p>
           <h2 className="text-[36px] sm:text-[46px] font-semibold text-[#292929] mt-1">
-            Contactez-nous
+            {t.contact.heading}
           </h2>
         </div>
 
@@ -118,10 +122,10 @@ export const Contact: React.FC = () => {
             <CheckCircle2 className="w-6 h-6 text-[#FC8920] shrink-0 mt-0.5" />
             <div>
               <h3 className="text-[16px] font-semibold text-[#292929]">
-                Votre message a bien été envoyé
+                {t.contact.sentTitle}
               </h3>
               <p className="text-[14px] text-[#595959] mt-1">
-                Merci pour votre message. L’équipe de Bois express vous répondra dans les plus brefs délais (du lundi au vendredi de 8h à 17h).
+                {t.contact.sentDesc}
               </p>
             </div>
           </div>
@@ -131,14 +135,14 @@ export const Contact: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="contact-firstName" className="block text-[14px] font-medium text-[#292929] mb-1.5">
-                Prénom *
+                {t.contact.firstName}
               </label>
               <input
                 id="contact-firstName"
                 type="text"
                 value={form.firstName}
                 onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                placeholder="Prénom"
+                placeholder={t.contact.firstName.replace(/\s*\*$/, '')}
                 className="w-full border border-[#dcdcdc] px-3.5 py-2.5 text-[15px] text-[#292929] bg-white focus:outline-none focus:border-[#FC8920]"
               />
               {errors.firstName && (
@@ -148,14 +152,14 @@ export const Contact: React.FC = () => {
 
             <div>
               <label htmlFor="contact-lastName" className="block text-[14px] font-medium text-[#292929] mb-1.5">
-                Nom *
+                {t.contact.lastName}
               </label>
               <input
                 id="contact-lastName"
                 type="text"
                 value={form.lastName}
                 onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                placeholder="Nom"
+                placeholder={t.contact.lastName.replace(/\s*\*$/, '')}
                 className="w-full border border-[#dcdcdc] px-3.5 py-2.5 text-[15px] text-[#292929] bg-white focus:outline-none focus:border-[#FC8920]"
               />
               {errors.lastName && (
@@ -167,14 +171,14 @@ export const Contact: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="contact-email" className="block text-[14px] font-medium text-[#292929] mb-1.5">
-                Email *
+                {t.contact.email}
               </label>
               <input
                 id="contact-email"
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="Email"
+                placeholder={t.contact.email.replace(/\s*\*$/, '')}
                 className="w-full border border-[#dcdcdc] px-3.5 py-2.5 text-[15px] text-[#292929] bg-white focus:outline-none focus:border-[#FC8920]"
               />
               {errors.email && (
@@ -184,14 +188,14 @@ export const Contact: React.FC = () => {
 
             <div>
               <label htmlFor="contact-phone" className="block text-[14px] font-medium text-[#292929] mb-1.5">
-                Numéro de téléphone *
+                {t.contact.phone}
               </label>
               <input
                 id="contact-phone"
                 type="tel"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="Numéro de téléphone"
+                placeholder={t.contact.phone.replace(/\s*\*$/, '')}
                 className="w-full border border-[#dcdcdc] px-3.5 py-2.5 text-[15px] text-[#292929] bg-white focus:outline-none focus:border-[#FC8920]"
               />
               {errors.phone && (
@@ -203,30 +207,30 @@ export const Contact: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="contact-type" className="block text-[14px] font-medium text-[#292929] mb-1.5">
-                Votre demande concerne :
+                {t.contact.requestTypeLabel}
               </label>
               <select
                 id="contact-type"
                 value={form.requestType}
-                onChange={(e) => setForm({ ...form, requestType: e.target.value })}
+                onChange={(e) => setForm({ ...form, requestType: e.target.value as RequestType })}
                 className="w-full border border-[#dcdcdc] px-3.5 py-2.5 text-[15px] text-[#292929] bg-white focus:outline-none focus:border-[#FC8920]"
               >
-                <option value="Informations sur un produit">Informations sur un produit</option>
-                <option value="Demande de devis">Demande de devis</option>
-                <option value="Autre">Autre</option>
+                <option value="product">{t.contact.optProductInfo}</option>
+                <option value="quote">{t.contact.optQuote}</option>
+                <option value="other">{t.contact.optOther}</option>
               </select>
             </div>
 
             <div>
               <label htmlFor="contact-subject" className="block text-[14px] font-medium text-[#292929] mb-1.5">
-                Préciser l’objet de votre demande
+                {t.contact.subjectLabel}
               </label>
               <input
                 id="contact-subject"
                 type="text"
                 value={form.subjectDetail}
                 onChange={(e) => setForm({ ...form, subjectDetail: e.target.value })}
-                placeholder="Préciser l'objet de votre demande"
+                placeholder={t.contact.subjectPlaceholder}
                 className="w-full border border-[#dcdcdc] px-3.5 py-2.5 text-[15px] text-[#292929] bg-white focus:outline-none focus:border-[#FC8920]"
               />
             </div>
@@ -234,14 +238,14 @@ export const Contact: React.FC = () => {
 
           <div>
             <label htmlFor="contact-message" className="block text-[14px] font-medium text-[#292929] mb-1.5">
-              Message *
+              {t.contact.messageLabel}
             </label>
             <textarea
               id="contact-message"
               rows={5}
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
-              placeholder="Message"
+              placeholder={t.contact.messageLabel.replace(/\s*\*$/, '')}
               className="w-full border border-[#dcdcdc] px-3.5 py-2.5 text-[15px] text-[#292929] bg-white focus:outline-none focus:border-[#FC8920]"
             />
             {errors.message && (
@@ -258,13 +262,13 @@ export const Contact: React.FC = () => {
                 className="mt-1 w-4 h-4 accent-[#FC8920] cursor-pointer"
               />
               <span>
-                J’accepte les{' '}
+                {t.contact.consentPrefix}{' '}
                 <Link to="/conditions-dutilisation" className="text-[#FC8920] underline">
-                  conditions d’utilisation
+                  {t.contact.termsLink}
                 </Link>{' '}
-                et la{' '}
+                {t.contact.andText}{' '}
                 <Link to="/protection-des-donnees" className="text-[#FC8920] underline">
-                  politique de confidentialité
+                  {t.contact.privacyLink}
                 </Link>
                 .
               </span>
@@ -279,7 +283,7 @@ export const Contact: React.FC = () => {
               type="submit"
               className="w-full sm:w-auto px-10 py-3 bg-[#FC8920] hover:bg-[#292929] text-white font-semibold text-[15px] transition-colors cursor-pointer"
             >
-              Envoyer
+              {t.contact.submitBtn}
             </button>
           </div>
         </form>
@@ -288,7 +292,7 @@ export const Contact: React.FC = () => {
       {/* Map Embed */}
       <section className="w-full h-[298px] bg-[#e9e9e9]">
         <iframe
-          title="Localisation Bois express - 3 rue de Schoeneck, 57600 Forbach"
+          title={t.contact.mapTitle}
           src="https://www.openstreetmap.org/export/embed.html?bbox=6.890%2C49.180%2C6.935%2C49.205&layer=mapnik&marker=49.1935%2C6.9135"
           className="w-full h-full border-0"
           loading="lazy"

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck } from 'lucide-react';
 import { CookiePreferences } from '../types';
+import { useLanguage } from '../hooks/useLanguage';
 
 export const COOKIE_STORAGE_KEY = 'bois_chauffages_cookies_v1';
 
@@ -35,6 +36,7 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
   onCloseModal,
   onOpenModal,
 }) => {
+  const { t } = useLanguage();
   const [savedPrefs, setSavedPrefs] = useState<CookiePreferences | null>(
     getStoredPreferences
   );
@@ -88,12 +90,12 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
       {!savedPrefs && !isModalOpen && (
         <div
           role="region"
-          aria-label="Gestion des cookies"
+          aria-label={t.cookies.regionAria}
           className="fixed bottom-0 inset-x-0 z-40 bg-[#292929] text-white border-t border-white/15 px-4 py-3 shadow-lg"
         >
           <div className="max-w-[1347px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px]">
             <p className="text-white/90 text-center sm:text-left">
-              Ce site utilise des cookies nécessaires à son fonctionnement ainsi que des traceurs soumis à votre consentement (durée de vie maximale : 13 mois).
+              {t.cookies.bannerText}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
               <button
@@ -101,21 +103,21 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
                 onClick={onOpenModal}
                 className="px-3 py-1.5 border border-white/30 hover:border-white text-white rounded text-[12px] font-medium transition-colors cursor-pointer whitespace-nowrap"
               >
-                Personnaliser
+                {t.cookies.customizeBtn}
               </button>
               <button
                 type="button"
                 onClick={refuseAll}
                 className="px-3 py-1.5 bg-[#595959] hover:bg-black text-white rounded text-[12px] font-semibold transition-colors cursor-pointer whitespace-nowrap"
               >
-                Tout refuser
+                {t.cookies.refuseAllBtn}
               </button>
               <button
                 type="button"
                 onClick={acceptAll}
                 className="px-3.5 py-1.5 bg-[#FC8920] hover:bg-white hover:text-[#292929] text-white rounded text-[12px] font-semibold transition-colors cursor-pointer whitespace-nowrap"
               >
-                Tout accepter
+                {t.cookies.acceptAllBtn}
               </button>
             </div>
           </div>
@@ -135,13 +137,13 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-[#FC8920]" />
                 <h2 id="cookie-modal-title" className="text-[18px] font-semibold">
-                  Panneau de gestion des cookies
+                  {t.cookies.modalTitle}
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={onCloseModal}
-                aria-label="Fermer"
+                aria-label={t.cookies.closeAria}
                 className="p-1 text-white/80 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -149,18 +151,16 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
             </div>
 
             <div className="p-6 space-y-4 text-[14px] text-[#595959]">
-              <p>
-                Conformément à la politique de protection des données de Bois express, vous pouvez autoriser ou refuser les catégories de cookies ci-dessous à tout moment.
-              </p>
+              <p>{t.cookies.modalIntro}</p>
 
               <div className="divide-y divide-[#dcdcdc] border border-[#dcdcdc] rounded-lg">
                 <div className="p-4 flex items-center justify-between gap-4 bg-[#f7f7f7]">
                   <div>
-                    <p className="font-semibold text-[#292929]">Cookies exemptés de consentement</p>
-                    <p className="text-[12px]">Nécessaires à la consultation du Site et à la gestion du panier.</p>
+                    <p className="font-semibold text-[#292929]">{t.cookies.essentialTitle}</p>
+                    <p className="text-[12px]">{t.cookies.essentialDesc}</p>
                   </div>
                   <span className="text-[12px] font-semibold text-[#FC8920] whitespace-nowrap">
-                    Toujours actif
+                    {t.cookies.alwaysActive}
                   </span>
                 </div>
 
@@ -168,28 +168,28 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
                   [
                     {
                       key: 'analytics',
-                      label: 'Cookies de mesure d’audience',
-                      desc: 'Établir des statistiques sur les visites et visiteurs.',
+                      label: t.cookies.analyticsTitle,
+                      desc: t.cookies.analyticsDesc,
                     },
                     {
                       key: 'apis',
-                      label: 'Cookies d’APIs',
-                      desc: 'Charger des scripts interactifs de géolocalisation et de sécurité.',
+                      label: t.cookies.apisTitle,
+                      desc: t.cookies.apisDesc,
                     },
                     {
                       key: 'advertising',
-                      label: 'Cookies publicitaires',
-                      desc: 'Proposer des publicités les plus pertinentes possibles.',
+                      label: t.cookies.advertisingTitle,
+                      desc: t.cookies.advertisingDesc,
                     },
                     {
                       key: 'social',
-                      label: 'Cookies de réseaux sociaux',
-                      desc: 'Interagir avec les réseaux sociaux en partageant des contenus.',
+                      label: t.cookies.socialTitle,
+                      desc: t.cookies.socialDesc,
                     },
                     {
                       key: 'video',
-                      label: 'Cookies de vidéos',
-                      desc: 'Consulter des vidéos informatives relatives à nos produits et services.',
+                      label: t.cookies.videoTitle,
+                      desc: t.cookies.videoDesc,
                     },
                   ] as const
                 ).map((item) => (
@@ -219,21 +219,21 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
                   onClick={refuseAll}
                   className="px-4 py-2 bg-[#595959] hover:bg-[#292929] text-white text-[13px] font-semibold rounded transition-colors cursor-pointer"
                 >
-                  Tout refuser
+                  {t.cookies.refuseAllBtn}
                 </button>
                 <button
                   type="button"
                   onClick={() => persistPrefs(draft)}
                   className="px-4 py-2 border border-[#292929] text-[#292929] hover:bg-[#292929] hover:text-white text-[13px] font-semibold rounded transition-colors cursor-pointer"
                 >
-                  Enregistrer mes choix
+                  {t.cookies.saveChoicesBtn}
                 </button>
                 <button
                   type="button"
                   onClick={acceptAll}
                   className="px-4 py-2 bg-[#FC8920] hover:bg-[#292929] text-white text-[13px] font-semibold rounded transition-colors cursor-pointer"
                 >
-                  Tout accepter
+                  {t.cookies.acceptAllBtn}
                 </button>
               </div>
             </div>

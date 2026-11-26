@@ -1,9 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, Phone, Mail, MapPin, UserCircle } from 'lucide-react';
-import { COMPANY_INFO, MAIN_NAV_ITEMS } from '../data/navigation';
+import { X, Phone, Mail, MapPin, UserCircle, Globe } from 'lucide-react';
+import { COMPANY_INFO } from '../data/navigation';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../hooks/useLanguage';
 import { BrandLogo } from './BrandLogo';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -12,28 +14,40 @@ interface MobileMenuProps {
 
 export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   if (!isOpen) return null;
+
+  const navItems = [
+    { label: t.nav.home, path: '/' },
+    { label: t.nav.bois, path: '/type-de-chauffage/bois' },
+    { label: t.nav.briquettes, path: '/type-de-chauffage/briquettes' },
+    { label: t.nav.pellets, path: '/type-de-chauffage/pellets' },
+    { label: t.nav.granules, path: '/type-de-chauffage/granules-de-bois' },
+    { label: t.nav.allumage, path: '/type-de-chauffage/allumage' },
+    { label: t.nav.actualites, path: '/actualites' },
+    { label: t.nav.contact, path: '/contact' },
+  ];
 
   return (
     <div className="lg:hidden fixed inset-0 z-50 flex flex-col bg-[#292929] text-white overflow-y-auto">
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/15">
-        <NavLink to="/" onClick={onClose} aria-label="Accueil Bois express">
+        <NavLink to="/" onClick={onClose} aria-label={t.header.homeAria}>
           <BrandLogo variant="horizontal" />
         </NavLink>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Fermer le menu"
+          aria-label={t.nav.closeMenu}
           className="p-2.5 text-white hover:text-[#FC8920] transition-colors cursor-pointer"
         >
           <X className="w-6 h-6" />
         </button>
       </div>
 
-      <nav aria-label="Menu mobile" className="flex-1 px-4 py-4">
+      <nav aria-label={t.nav.mobileNavAria} className="flex-1 px-4 py-4">
         <ul className="divide-y divide-[#dcdcdc]/20">
-          {MAIN_NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <li key={item.path}>
               <NavLink
                 to={item.path}
@@ -59,7 +73,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
                 }`
               }
             >
-              Panier
+              {t.nav.cart}
             </NavLink>
           </li>
           <li>
@@ -73,7 +87,9 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
               }
             >
               <UserCircle className="w-5 h-5 text-[#FC8920]" />
-              <span>{user ? `Mon compte (${user.firstName})` : 'Connexion / Inscription'}</span>
+              <span>
+                {user ? `${t.nav.accountPrefix} (${user.firstName})` : t.nav.loginRegister}
+              </span>
             </NavLink>
           </li>
           <li>
@@ -86,10 +102,18 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
                 }`
               }
             >
-              Zones de livraison
+              {t.nav.deliveryZones}
             </NavLink>
           </li>
         </ul>
+
+        <div className="mt-5 pt-4 border-t border-white/15 px-2">
+          <p className="text-[13px] font-semibold text-white/80 flex items-center gap-2 mb-2.5">
+            <Globe className="w-4 h-4 text-[#FC8920]" />
+            <span>{t.common.chooseLanguage}</span>
+          </p>
+          <LanguageSwitcher variant="inline" onSelect={onClose} />
+        </div>
       </nav>
 
       <div className="px-6 py-5 bg-black/25 space-y-3 text-sm">

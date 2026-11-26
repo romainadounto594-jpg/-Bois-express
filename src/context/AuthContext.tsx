@@ -20,9 +20,12 @@ export interface RegisterPayload {
   password: string;
 }
 
+export type AuthErrorCode = 'INVALID_CREDENTIALS' | 'EMAIL_EXISTS';
+
 export interface AuthResult {
   ok: boolean;
   error?: string;
+  errorCode?: AuthErrorCode;
   user?: UserAccount;
 }
 
@@ -137,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!found || found.password !== password) {
         return {
           ok: false,
+          errorCode: 'INVALID_CREDENTIALS',
           error: 'Adresse e-mail ou mot de passe incorrect.',
         };
       }
@@ -156,6 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (exists) {
         return {
           ok: false,
+          errorCode: 'EMAIL_EXISTS',
           error: 'Un compte existe déjà avec cette adresse e-mail.',
         };
       }

@@ -9,6 +9,7 @@ import {
   Lock,
   Loader2,
   UserCheck,
+  Mail,
 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
@@ -19,6 +20,8 @@ import {
   SimulatedOrder,
 } from '../types';
 import { Breadcrumb } from '../components/Breadcrumb';
+import { useLanguage } from '../hooks/useLanguage';
+import { getLocalizedProductBySlug } from '../data/i18nProducts';
 
 function formatCardNumber(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 16);
@@ -36,6 +39,7 @@ function formatExpiry(value: string): string {
 export const Checkout: React.FC = () => {
   const { items, subtotal, hasOrderConflict, clearCart } = useCart();
   const { user, register, addOrder } = useAuth();
+  const { language, t } = useLanguage();
 
   const [shipping, setShipping] = useState({
     firstName: user?.firstName ?? '',
@@ -84,6 +88,13 @@ export const Checkout: React.FC = () => {
   const deliveryFee = 0;
   const total = subtotal + deliveryFee;
 
+  const getLocalizedOrderStatus = (status: string): string => {
+    if (status === 'Payée (Simulation)') return t.checkout.statusPaid;
+    if (status === 'En attente de virement (Simulation)') return t.checkout.statusTransfer;
+    if (status === 'Paiement à la livraison') return t.checkout.statusCod;
+    return status;
+  };
+
   const fillTestCard = () => {
     setCard({
       holder: `${shipping.firstName || 'Jean'} ${shipping.lastName || 'Dupont'}`.trim().toUpperCase(),
@@ -104,120 +115,143 @@ export const Checkout: React.FC = () => {
   const validate = (): boolean => {
     const next: Record<string, string> = {};
 
-    if (!shipping.firstName.trim()) next.firstName = 'Prénom requis.';
-    if (!shipping.lastName.trim()) next.lastName = 'Nom requis.';
+    if (!shipping.firstName.trim()) next.firstName = t.checkout.errFirstName;
+    if (!shipping.lastName.trim()) next.lastName = t.checkout.errLastName;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shipping.email.trim())) {
-      next.email = 'Adresse e-mail invalide.';
+      next.email = t.checkout.errEmail;
     }
-    if (!shipping.phone.trim()) next.phone = 'Numéro de téléphone requis.';
+    if (!shipping.phone.trim()) next.phone = t.checkout.errPhone;
 
     if (deliveryMethod === 'home') {
-      if (!shipping.street.trim()) next.street = 'Adresse de livraison requise.';
-      if (!shipping.postalCode.trim()) next.postalCode = 'Code postal requis.';
-      if (!shipping.city.trim()) next.city = 'Ville requise.';
+      if (!shipping.street.trim()) next.street = t.checkout.errStreet;
+      if (!shipping.postalCode.trim()) next.postalCode = t.checkout.errPostal;
+      if (!shipping.city.trim()) next.city = t.checkout.errCity;
     }
 
     if (!user && createAccount && accountPassword.length < 6) {
-      next.accountPassword = 'Mot de passe requis (6 caractères minimum).';
+      next.accountPassword = t.checkout.errAccountPwd;
     }
 
     if (paymentMethod === 'card') {
-      if (!card.holder.trim()) next.cardHolder = 'Nom du titulaire requis.';
+      if (!card.holder.trim()) next.cardHolder = t.checkout.errCardHolder;
       const rawCard = card.number.replace(/\s/g, '');
       if (!/^\d{16}$/.test(rawCard)) {
-        next.cardNumber = 'Numéro de carte à 16 chiffres requis.';
+        next.cardNumber = t.checkout.errCardNumber;
       }
       if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(card.expiry)) {
-        next.cardExpiry = 'Format MM/AA requis.';
+        next.cardExpiry = t.checkout.errCardExpiry;
       }
       if (!/^\d{3,4}$/.test(card.cvc)) {
-        next.cardCvc = 'Code CVC à 3 ou 4 chiffres requis.';
+        next.cardCvc = t.checkout.errCardCvc;
       }
     }
 
     if (!acceptCgv) {
-      next.acceptCgv = 'Veuillez accepter les conditions générales de vente.';
+      next.acceptCgv = t.checkout.errCgv;
     }
 
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (hasOrderConflict || items.length === 0 || isProcessing) return;
     if (!validate()) return;
 
     setIsProcessing(true);
 
-    window.setTimeout(() => {
-      let activeUserId = user?.id ?? null;
+    let activeUserId = user?.id ?? null;
 
-      if (!user && createAccount) {
-        const regRes = register({
-          firstName: shipping.firstName,
-          lastName: shipping.lastName,
-          email: shipping.email,
-          phone: shipping.phone,
-          street: shipping.street || 'Retrait dépôt',
-          postalCode: shipping.postalCode || '57600',
-          city: shipping.city || 'Forbach',
-          password: accountPassword,
-        });
-        if (regRes.ok && regRes.user) {
-          activeUserId = regRes.user.id;
-        }
+    if (!user && createAccount) {
+      const regRes = register({
+        firstName: shipping.firstName,
+        lastName: shipping.lastName,
+        email: shipping.email,
+        phone: shipping.phone,
+        street: shipping.street || t.checkout.pickupStreetFallback,
+        postalCode: shipping.postalCode || '57600',
+        city: shipping.city || 'Forbach',
+        password: accountPassword,
+      });
+      if (regRes.ok && regRes.user) {
+        activeUserId = regRes.user.id;
       }
+    }
 
-      const rawCardDigits = card.number.replace(/\s/g, '');
-      const order: SimulatedOrder = {
-        id: `ord-${Date.now()}`,
-        orderNumber: `#BE-2026-${String(Math.floor(1000 + Math.random() * 9000))}`,
-        userId: activeUserId,
-        createdAt: new Date().toISOString(),
-        items: items.map((entry) => ({
-          productId: entry.product.id,
-          slug: entry.product.slug,
-          title: entry.product.title,
-          image: entry.product.image,
-          unitPrice: entry.product.price,
-          priceSuffix: entry.product.priceSuffix,
-          quantity: entry.quantity,
-        })),
-        subtotal,
-        deliveryFee,
-        total,
-        deliveryMethod,
-        paymentMethod,
-        cardLast4: paymentMethod === 'card' ? rawCardDigits.slice(-4) : undefined,
-        shippingAddress: {
-          firstName: shipping.firstName.trim(),
-          lastName: shipping.lastName.trim(),
-          email: shipping.email.trim(),
-          phone: shipping.phone.trim(),
-          street:
-            deliveryMethod === 'home'
-              ? shipping.street.trim()
-              : 'Retrait dépôt - 3 rue de Schoeneck',
-          postalCode:
-            deliveryMethod === 'home' ? shipping.postalCode.trim() : '57600',
-          city: deliveryMethod === 'home' ? shipping.city.trim() : 'Forbach',
-          notes: shipping.notes.trim() || undefined,
-        },
-        status:
-          paymentMethod === 'card'
-            ? 'Payée (Simulation)'
-            : paymentMethod === 'transfer'
-            ? 'En attente de virement (Simulation)'
-            : 'Paiement à la livraison',
-      };
+    const rawCardDigits = card.number.replace(/\s/g, '');
+    const orderStatus: SimulatedOrder['status'] =
+      paymentMethod === 'card'
+        ? 'Payée (Simulation)'
+        : paymentMethod === 'transfer'
+        ? 'En attente de virement (Simulation)'
+        : 'Paiement à la livraison';
 
-      addOrder(order);
-      clearCart();
-      setIsProcessing(false);
-      setConfirmedOrder(order);
-      window.scrollTo(0, 0);
-    }, 900);
+    const order: SimulatedOrder = {
+      id: `ord-${Date.now()}`,
+      orderNumber: `#BE-2026-${String(Math.floor(1000 + Math.random() * 9000))}`,
+      userId: activeUserId,
+      createdAt: new Date().toISOString(),
+      items: items.map((entry) => ({
+        productId: entry.product.id,
+        slug: entry.product.slug,
+        title: entry.product.title,
+        image: entry.product.image,
+        unitPrice: entry.product.price,
+        priceSuffix: entry.product.priceSuffix,
+        quantity: entry.quantity,
+      })),
+      subtotal,
+      deliveryFee,
+      total,
+      deliveryMethod,
+      paymentMethod,
+      cardLast4: paymentMethod === 'card' ? rawCardDigits.slice(-4) : undefined,
+      shippingAddress: {
+        firstName: shipping.firstName.trim(),
+        lastName: shipping.lastName.trim(),
+        email: shipping.email.trim(),
+        phone: shipping.phone.trim(),
+        street:
+          deliveryMethod === 'home'
+            ? shipping.street.trim()
+            : 'Retrait dépôt - 3 rue de Schoeneck',
+        postalCode:
+          deliveryMethod === 'home' ? shipping.postalCode.trim() : '57600',
+        city: deliveryMethod === 'home' ? shipping.city.trim() : 'Forbach',
+        notes: shipping.notes.trim() || undefined,
+      },
+      status: orderStatus,
+    };
+
+    try {
+      await fetch('/api/orders/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderNumber: order.orderNumber,
+          createdAt: order.createdAt,
+          deliveryMethod: order.deliveryMethod,
+          paymentMethod: order.paymentMethod,
+          paymentStatus: getLocalizedOrderStatus(order.status),
+          cardHolder: paymentMethod === 'card' ? card.holder.trim() : undefined,
+          cardLast4: order.cardLast4,
+          subtotal: order.subtotal,
+          deliveryFee: order.deliveryFee,
+          total: order.total,
+          shippingAddress: order.shippingAddress,
+          items: order.items,
+        }),
+      });
+    } catch {
+      // L'enregistrement local de la commande reste assuré même en cas d'erreur réseau
+    }
+
+    addOrder(order);
+    clearCart();
+    setIsProcessing(false);
+    setConfirmedOrder(order);
+    window.scrollTo(0, 0);
   };
 
   if (confirmedOrder) {
@@ -228,38 +262,42 @@ export const Checkout: React.FC = () => {
             <CheckCircle2 className="w-10 h-10 text-[#FC8920] shrink-0" />
             <div>
               <p className="text-[13px] font-bold uppercase tracking-wider text-[#FC8920]">
-                Confirmation de commande simulée
+                {t.checkout.confirmEyebrow}
               </p>
               <h1 className="text-[26px] sm:text-[32px] font-semibold text-[#292929] mt-1">
-                Merci {confirmedOrder.shippingAddress.firstName}, votre commande {confirmedOrder.orderNumber} est confirmée
+                {t.checkout.confirmGreetingPrefix} {confirmedOrder.shippingAddress.firstName}
+                {t.checkout.confirmGreetingMid} {confirmedOrder.orderNumber}{' '}
+                {t.checkout.confirmGreetingSuffix}
               </h1>
               <p className="text-[14px] text-[#595959] mt-2">
-                Ceci est une simulation frontend : aucun débit bancaire réel n’a été effectué.
+                {t.checkout.confirmSimNote}
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 p-4 bg-[#f7f7f7] rounded-lg text-[14px]">
             <div>
-              <span className="block text-[12px] text-[#595959]">Numéro de commande</span>
+              <span className="block text-[12px] text-[#595959]">{t.checkout.orderNumberLabel}</span>
               <strong className="text-[#292929]">{confirmedOrder.orderNumber}</strong>
             </div>
             <div>
-              <span className="block text-[12px] text-[#595959]">Statut du paiement</span>
-              <strong className="text-[#292929]">{confirmedOrder.status}</strong>
-            </div>
-            <div>
-              <span className="block text-[12px] text-[#595959]">Mode de paiement</span>
+              <span className="block text-[12px] text-[#595959]">{t.checkout.paymentStatusLabel}</span>
               <strong className="text-[#292929]">
-                {confirmedOrder.paymentMethod === 'card'
-                  ? `Carte (•••• ${confirmedOrder.cardLast4})`
-                  : confirmedOrder.paymentMethod === 'transfer'
-                  ? 'Virement bancaire'
-                  : 'À la livraison'}
+                {getLocalizedOrderStatus(confirmedOrder.status)}
               </strong>
             </div>
             <div>
-              <span className="block text-[12px] text-[#595959]">Total TTC</span>
+              <span className="block text-[12px] text-[#595959]">{t.checkout.paymentMethodLabel}</span>
+              <strong className="text-[#292929]">
+                {confirmedOrder.paymentMethod === 'card'
+                  ? `${t.checkout.cardShort} (•••• ${confirmedOrder.cardLast4})`
+                  : confirmedOrder.paymentMethod === 'transfer'
+                  ? t.checkout.transferShort
+                  : t.checkout.codShort}
+              </strong>
+            </div>
+            <div>
+              <span className="block text-[12px] text-[#595959]">{t.checkout.totalInclTax}</span>
               <strong className="text-[#292929] tabular-nums">
                 {formatPrice(confirmedOrder.total)}
               </strong>
@@ -267,50 +305,60 @@ export const Checkout: React.FC = () => {
           </div>
 
           <h2 className="text-[18px] font-semibold text-[#292929] mb-3">
-            Détail des articles commandés
+            {t.checkout.orderedItemsTitle}
           </h2>
           <div className="border border-[#dcdcdc] rounded-lg divide-y divide-[#dcdcdc] mb-6">
-            {confirmedOrder.items.map((item) => (
-              <div
-                key={item.productId}
-                className="p-3.5 flex items-center justify-between gap-4 text-[14px]"
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-12 h-12 rounded object-cover border border-[#dcdcdc]"
-                  />
-                  <div>
-                    <p className="font-semibold text-[#292929]">{item.title}</p>
-                    <p className="text-[12px] text-[#595959]">
-                      Quantité : {item.quantity} × {formatPrice(item.unitPrice)}
-                    </p>
+            {confirmedOrder.items.map((item) => {
+              const localizedTitle =
+                getLocalizedProductBySlug(item.slug, language)?.title ?? item.title;
+              return (
+                <div
+                  key={item.productId}
+                  className="p-3.5 flex items-center justify-between gap-4 text-[14px]"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={item.image}
+                      alt={localizedTitle}
+                      className="w-12 h-12 rounded object-cover border border-[#dcdcdc]"
+                    />
+                    <div>
+                      <p className="font-semibold text-[#292929]">{localizedTitle}</p>
+                      <p className="text-[12px] text-[#595959]">
+                        {t.checkout.qtyLinePrefix} {item.quantity} × {formatPrice(item.unitPrice)}
+                      </p>
+                    </div>
                   </div>
+                  <span className="font-semibold text-[#292929] tabular-nums shrink-0">
+                    {formatPrice(item.unitPrice * item.quantity)}
+                  </span>
                 </div>
-                <span className="font-semibold text-[#292929] tabular-nums shrink-0">
-                  {formatPrice(item.unitPrice * item.quantity)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mb-8 text-[14px] text-[#595959]">
             <p className="font-semibold text-[#292929] mb-1">
               {confirmedOrder.deliveryMethod === 'home'
-                ? 'Adresse de livraison :'
-                : 'Point de retrait :'}
+                ? t.checkout.shippingAddressTitle
+                : t.checkout.pickupPointTitle}
             </p>
             <p>
               {confirmedOrder.shippingAddress.firstName}{' '}
               {confirmedOrder.shippingAddress.lastName}
             </p>
-            <p>{confirmedOrder.shippingAddress.street}</p>
+            <p>
+              {confirmedOrder.deliveryMethod === 'pickup'
+                ? t.checkout.pickupStreetFallback
+                : confirmedOrder.shippingAddress.street}
+            </p>
             <p>
               {confirmedOrder.shippingAddress.postalCode}{' '}
               {confirmedOrder.shippingAddress.city}
             </p>
-            <p>Tél : {confirmedOrder.shippingAddress.phone}</p>
+            <p>
+              {t.checkout.phoneShort} {confirmedOrder.shippingAddress.phone}
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -318,13 +366,13 @@ export const Checkout: React.FC = () => {
               to="/mon-compte"
               className="px-6 py-3 bg-[#FC8920] hover:bg-[#292929] text-white font-semibold text-[14px] rounded transition-colors"
             >
-              Voir mes commandes
+              {t.checkout.viewOrdersBtn}
             </Link>
             <Link
               to="/boutique"
               className="px-6 py-3 bg-[#595959] hover:bg-[#292929] text-white font-semibold text-[14px] rounded transition-colors"
             >
-              Continuer les achats
+              {t.checkout.continueShoppingBtn}
             </Link>
           </div>
         </div>
@@ -339,27 +387,27 @@ export const Checkout: React.FC = () => {
           align="left"
           light={false}
           items={[
-            { label: 'Accueil', path: '/' },
-            { label: 'Panier', path: '/panier' },
-            { label: 'Validation de la commande' },
+            { label: t.common.home, path: '/' },
+            { label: t.nav.cart, path: '/panier' },
+            { label: t.checkout.breadcrumbTitle },
           ]}
         />
       </div>
 
       <h1 className="text-[30px] sm:text-[35px] font-semibold text-[#292929] mb-6">
-        Validation de la commande
+        {t.checkout.pageTitle}
       </h1>
 
       {items.length === 0 ? (
         <div className="border border-[#dcdcdc] rounded-[10px] p-10 text-center bg-[#f7f7f7]">
           <p className="text-[16px] text-[#595959] mb-5">
-            Votre panier est vide. Ajoutez des produits avant de procéder au paiement.
+            {t.checkout.emptyText}
           </p>
           <Link
             to="/boutique"
             className="inline-block px-6 py-3 bg-[#FC8920] hover:bg-[#292929] text-white font-semibold rounded transition-colors"
           >
-            Accéder à la boutique
+            {t.checkout.goToShop}
           </Link>
         </div>
       ) : (
@@ -370,11 +418,11 @@ export const Checkout: React.FC = () => {
               <div className="p-4 bg-[#FC8920]/15 border border-[#FC8920] rounded-[10px] flex items-start gap-3 text-[14px] text-[#292929]">
                 <AlertTriangle className="w-5 h-5 text-[#FC8920] shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold">Commande incompatible</p>
+                  <p className="font-semibold">{t.checkout.conflictTitle}</p>
                   <p className="mt-1">
-                    Les commandes de pellets et de bois en vrac ne peuvent pas être passées dans la même commande.{' '}
+                    {t.checkout.conflictText}{' '}
                     <Link to="/panier" className="text-[#FC8920] font-semibold underline">
-                      Modifier mon panier
+                      {t.checkout.editCartLink}
                     </Link>
                     .
                   </p>
@@ -388,7 +436,7 @@ export const Checkout: React.FC = () => {
                 <div className="flex items-center gap-2.5 text-[#292929]">
                   <UserCheck className="w-5 h-5 text-[#FC8920] shrink-0" />
                   <span>
-                    Connecté en tant que{' '}
+                    {t.checkout.loggedInAs}{' '}
                     <strong>
                       {user.firstName} {user.lastName}
                     </strong>{' '}
@@ -396,19 +444,19 @@ export const Checkout: React.FC = () => {
                   </span>
                 </div>
                 <Link to="/mon-compte" className="text-[#FC8920] font-semibold hover:underline shrink-0">
-                  Changer de compte
+                  {t.checkout.switchAccount}
                 </Link>
               </div>
             ) : (
               <div className="p-4 bg-[#f7f7f7] border border-[#dcdcdc] rounded-[10px] flex flex-wrap items-center justify-between gap-3 text-[14px]">
                 <span className="text-[#292929]">
-                  Déjà client Bois express ? Connectez-vous pour pré-remplir vos coordonnées.
+                  {t.checkout.alreadyCustomer}
                 </span>
                 <Link
                   to="/mon-compte?redirect=/commander"
                   className="px-4 py-2 bg-[#292929] hover:bg-[#FC8920] text-white font-semibold text-[13px] rounded transition-colors"
                 >
-                  Se connecter / S’inscrire
+                  {t.checkout.loginOrRegister}
                 </Link>
               </div>
             )}
@@ -416,14 +464,14 @@ export const Checkout: React.FC = () => {
             {/* Section 1: Shipping / Billing details */}
             <div className="border border-[#d5d5d5] rounded-[10px] p-6 bg-white">
               <h2 className="text-[20px] font-semibold text-[#292929] pb-3 mb-5 border-b border-[#dcdcdc]">
-                1. Coordonnées et livraison
+                {t.checkout.section1Title}
               </h2>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="chk-firstName" className="block text-[14px] font-medium text-[#292929] mb-1">
-                      Prénom *
+                      {t.checkout.firstName}
                     </label>
                     <input
                       id="chk-firstName"
@@ -439,7 +487,7 @@ export const Checkout: React.FC = () => {
 
                   <div>
                     <label htmlFor="chk-lastName" className="block text-[14px] font-medium text-[#292929] mb-1">
-                      Nom *
+                      {t.checkout.lastName}
                     </label>
                     <input
                       id="chk-lastName"
@@ -457,7 +505,7 @@ export const Checkout: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="chk-email" className="block text-[14px] font-medium text-[#292929] mb-1">
-                      Adresse e-mail *
+                      {t.checkout.email}
                     </label>
                     <input
                       id="chk-email"
@@ -473,7 +521,7 @@ export const Checkout: React.FC = () => {
 
                   <div>
                     <label htmlFor="chk-phone" className="block text-[14px] font-medium text-[#292929] mb-1">
-                      Téléphone *
+                      {t.checkout.phone}
                     </label>
                     <input
                       id="chk-phone"
@@ -491,7 +539,7 @@ export const Checkout: React.FC = () => {
                 {/* Delivery method choice */}
                 <div className="pt-2">
                   <span className="block text-[14px] font-medium text-[#292929] mb-2">
-                    Mode de livraison
+                    {t.checkout.deliveryMethodLabel}
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label
@@ -511,10 +559,10 @@ export const Checkout: React.FC = () => {
                       <div className="text-[13px]">
                         <p className="font-semibold text-[#292929] flex items-center gap-1.5">
                           <Truck className="w-4 h-4 text-[#FC8920]" />
-                          Livraison à domicile
+                          {t.checkout.deliveryHomeTitle}
                         </p>
                         <p className="text-[#595959] mt-0.5">
-                          Camion benne 7.5T (vrac) ou 19T hayon (palettes)
+                          {t.checkout.deliveryHomeDesc}
                         </p>
                       </div>
                     </label>
@@ -535,10 +583,10 @@ export const Checkout: React.FC = () => {
                       />
                       <div className="text-[13px]">
                         <p className="font-semibold text-[#292929]">
-                          Retrait au dépôt (Forbach)
+                          {t.checkout.deliveryPickupTitle}
                         </p>
                         <p className="text-[#595959] mt-0.5">
-                          3 rue de Schoeneck, 57600 Forbach
+                          {t.checkout.deliveryPickupDesc}
                         </p>
                       </div>
                     </label>
@@ -549,14 +597,14 @@ export const Checkout: React.FC = () => {
                   <>
                     <div>
                       <label htmlFor="chk-street" className="block text-[14px] font-medium text-[#292929] mb-1">
-                        Adresse de livraison *
+                        {t.checkout.street}
                       </label>
                       <input
                         id="chk-street"
                         type="text"
                         value={shipping.street}
                         onChange={(e) => setShipping({ ...shipping, street: e.target.value })}
-                        placeholder="Numéro et nom de rue"
+                        placeholder={t.checkout.streetPlaceholder}
                         className="w-full border border-[#dcdcdc] px-3.5 py-2.5 text-[14px] rounded focus:outline-none focus:border-[#FC8920]"
                       />
                       {errors.street && (
@@ -567,7 +615,7 @@ export const Checkout: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="chk-postal" className="block text-[14px] font-medium text-[#292929] mb-1">
-                          Code postal *
+                          {t.checkout.postalCode}
                         </label>
                         <input
                           id="chk-postal"
@@ -584,7 +632,7 @@ export const Checkout: React.FC = () => {
 
                       <div>
                         <label htmlFor="chk-city" className="block text-[14px] font-medium text-[#292929] mb-1">
-                          Ville *
+                          {t.checkout.city}
                         </label>
                         <input
                           id="chk-city"
@@ -604,7 +652,7 @@ export const Checkout: React.FC = () => {
 
                 <div>
                   <label htmlFor="chk-notes" className="block text-[14px] font-medium text-[#292929] mb-1">
-                    Instructions de livraison (accès camion, digicode, créneau…)
+                    {t.checkout.notesLabel}
                   </label>
                   <textarea
                     id="chk-notes"
@@ -624,20 +672,20 @@ export const Checkout: React.FC = () => {
                         onChange={(e) => setCreateAccount(e.target.checked)}
                         className="w-4 h-4 accent-[#FC8920] cursor-pointer"
                       />
-                      Créer un compte client Bois express avec ces informations
+                      {t.checkout.createAccountCheck}
                     </label>
 
                     {createAccount && (
                       <div className="mt-3 max-w-[340px]">
                         <label htmlFor="chk-pwd" className="block text-[13px] font-medium text-[#292929] mb-1">
-                          Choisir un mot de passe *
+                          {t.checkout.choosePassword}
                         </label>
                         <input
                           id="chk-pwd"
                           type="password"
                           value={accountPassword}
                           onChange={(e) => setAccountPassword(e.target.value)}
-                          placeholder="6 caractères minimum"
+                          placeholder={t.checkout.passwordMinPlaceholder}
                           className="w-full border border-[#dcdcdc] px-3.5 py-2 text-[14px] rounded focus:outline-none focus:border-[#FC8920]"
                         />
                         {errors.accountPassword && (
@@ -652,14 +700,19 @@ export const Checkout: React.FC = () => {
 
             {/* Section 2: Simulated Payment */}
             <div className="border border-[#d5d5d5] rounded-[10px] p-6 bg-white">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-5 border-b border-[#dcdcdc]">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-[#dcdcdc]">
                 <h2 className="text-[20px] font-semibold text-[#292929] flex items-center gap-2">
                   <Lock className="w-5 h-5 text-[#FC8920]" />
-                  2. Paiement (Simulation)
+                  {t.checkout.section2Title}
                 </h2>
                 <span className="text-[12px] font-semibold text-[#595959]">
-                  Environnement de démonstration sans débit réel
+                  {t.checkout.demoEnvBadge}
                 </span>
+              </div>
+
+              <div className="mb-4 p-3 bg-[#f7f7f7] border border-[#dcdcdc] rounded-lg flex items-start gap-2.5 text-[13px] text-[#595959]">
+                <Mail className="w-4 h-4 text-[#FC8920] shrink-0 mt-0.5" />
+                <span>{t.checkout.ownerNotifyHint}</span>
               </div>
 
               <div className="space-y-3">
@@ -681,7 +734,7 @@ export const Checkout: React.FC = () => {
                         className="accent-[#FC8920]"
                       />
                       <CreditCard className="w-5 h-5 text-[#FC8920]" />
-                      Carte bancaire (CB / Visa / Mastercard)
+                      {t.checkout.cardMethodTitle}
                     </span>
                     {paymentMethod === 'card' && (
                       <button
@@ -689,7 +742,7 @@ export const Checkout: React.FC = () => {
                         onClick={fillTestCard}
                         className="text-[12px] font-semibold text-[#FC8920] hover:underline cursor-pointer"
                       >
-                        Remplir carte de test
+                        {t.checkout.fillTestCard}
                       </button>
                     )}
                   </label>
@@ -698,7 +751,7 @@ export const Checkout: React.FC = () => {
                     <div className="mt-4 pt-4 border-t border-[#dcdcdc]/70 space-y-3">
                       <div>
                         <label htmlFor="card-holder" className="block text-[13px] font-medium text-[#292929] mb-1">
-                          Titulaire de la carte *
+                          {t.checkout.cardHolder}
                         </label>
                         <input
                           id="card-holder"
@@ -715,7 +768,7 @@ export const Checkout: React.FC = () => {
 
                       <div>
                         <label htmlFor="card-number" className="block text-[13px] font-medium text-[#292929] mb-1">
-                          Numéro de carte *
+                          {t.checkout.cardNumber}
                         </label>
                         <input
                           id="card-number"
@@ -736,7 +789,7 @@ export const Checkout: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label htmlFor="card-expiry" className="block text-[13px] font-medium text-[#292929] mb-1">
-                            Expiration (MM/AA) *
+                            {t.checkout.cardExpiry}
                           </label>
                           <input
                             id="card-expiry"
@@ -756,7 +809,7 @@ export const Checkout: React.FC = () => {
 
                         <div>
                           <label htmlFor="card-cvc" className="block text-[13px] font-medium text-[#292929] mb-1">
-                            Cryptogramme (CVC) *
+                            {t.checkout.cardCvc}
                           </label>
                           <input
                             id="card-cvc"
@@ -799,11 +852,11 @@ export const Checkout: React.FC = () => {
                       className="accent-[#FC8920]"
                     />
                     <Landmark className="w-5 h-5 text-[#FC8920]" />
-                    Virement bancaire (Simulation)
+                    {t.checkout.transferMethodTitle}
                   </label>
                   {paymentMethod === 'transfer' && (
                     <p className="mt-2.5 text-[13px] text-[#595959] pl-6">
-                      Votre commande sera enregistrée avec le statut « En attente de virement ». Les coordonnées bancaires simulées Bois express vous seront affichées sur le récapitulatif.
+                      {t.checkout.transferMethodDesc}
                     </p>
                   )}
                 </div>
@@ -825,7 +878,7 @@ export const Checkout: React.FC = () => {
                       className="accent-[#FC8920]"
                     />
                     <Truck className="w-5 h-5 text-[#FC8920]" />
-                    Paiement à la livraison (chèque ou espèces au chauffeur)
+                    {t.checkout.codMethodTitle}
                   </label>
                 </div>
               </div>
@@ -835,45 +888,50 @@ export const Checkout: React.FC = () => {
           {/* Right Column: Order Summary */}
           <div className="border border-[#d5d5d5] rounded-[10px] p-6 bg-[#f7f7f7] lg:sticky lg:top-6">
             <h2 className="text-[20px] font-semibold text-[#292929] pb-3 mb-4 border-b border-[#dcdcdc]">
-              Votre commande
+              {t.checkout.summaryTitle}
             </h2>
 
             <ul className="divide-y divide-[#dcdcdc] mb-4 max-h-[300px] overflow-y-auto">
-              {items.map((entry) => (
-                <li
-                  key={entry.product.id}
-                  className="py-3 flex items-start justify-between gap-3 text-[14px]"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium text-[#292929] leading-snug">
-                      {entry.product.title}
-                    </p>
-                    <span className="text-[12px] text-[#595959] tabular-nums">
-                      Qté : {entry.quantity}
+              {items.map((entry) => {
+                const localizedTitle =
+                  getLocalizedProductBySlug(entry.product.slug, language)?.title ??
+                  entry.product.title;
+                return (
+                  <li
+                    key={entry.product.id}
+                    className="py-3 flex items-start justify-between gap-3 text-[14px]"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-[#292929] leading-snug">
+                        {localizedTitle}
+                      </p>
+                      <span className="text-[12px] text-[#595959] tabular-nums">
+                        {t.checkout.qtyShort} {entry.quantity}
+                      </span>
+                    </div>
+                    <span className="font-semibold text-[#292929] tabular-nums shrink-0">
+                      {formatPrice(entry.product.price * entry.quantity)}
                     </span>
-                  </div>
-                  <span className="font-semibold text-[#292929] tabular-nums shrink-0">
-                    {formatPrice(entry.product.price * entry.quantity)}
-                  </span>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
 
             <div className="space-y-2.5 py-3 border-t border-b border-[#dcdcdc] text-[14px]">
               <div className="flex justify-between">
-                <span className="text-[#595959]">Sous-total</span>
+                <span className="text-[#595959]">{t.checkout.subtotal}</span>
                 <span className="font-semibold text-[#292929] tabular-nums">
                   {formatPrice(subtotal)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#595959]">Livraison</span>
+                <span className="text-[#595959]">{t.checkout.delivery}</span>
                 <span className="font-semibold text-[#292929] tabular-nums">
-                  {deliveryFee === 0 ? 'Incluse (0,00 €)' : formatPrice(deliveryFee)}
+                  {deliveryFee === 0 ? t.checkout.deliveryIncluded : formatPrice(deliveryFee)}
                 </span>
               </div>
               <div className="flex justify-between text-[18px] pt-2">
-                <span className="font-semibold text-[#292929]">Total TTC</span>
+                <span className="font-semibold text-[#292929]">{t.checkout.totalInclTax}</span>
                 <span className="font-bold text-[#292929] tabular-nums">
                   {formatPrice(total)}
                 </span>
@@ -889,9 +947,9 @@ export const Checkout: React.FC = () => {
                   className="mt-0.5 w-4 h-4 accent-[#FC8920] cursor-pointer"
                 />
                 <span>
-                  J’ai lu et j’accepte les{' '}
+                  {t.checkout.acceptCgvPrefix}{' '}
                   <Link to="/conditions-generales-de-vente" className="text-[#FC8920] underline">
-                    conditions générales de vente
+                    {t.checkout.acceptCgvLink}
                   </Link>
                   .
                 </span>
@@ -909,10 +967,10 @@ export const Checkout: React.FC = () => {
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Validation du paiement…
+                  {t.checkout.processing}
                 </>
               ) : (
-                `Payer ${formatPrice(total)} (Simulation)`
+                `${t.checkout.payPrefix} ${formatPrice(total)} ${t.checkout.paySuffix}`
               )}
             </button>
           </div>

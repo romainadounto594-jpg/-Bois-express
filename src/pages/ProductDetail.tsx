@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Check, Info } from 'lucide-react';
-import { getProductBySlug, getRelatedProducts } from '../data/products';
+import { getLocalizedProductBySlug, getLocalizedRelatedProducts } from '../data/i18nProducts';
 import { formatPrice } from '../context/CartContext';
 import { useCart } from '../hooks/useCart';
+import { useLanguage } from '../hooks/useLanguage';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { ProductGrid } from '../components/ProductGrid';
 
 export const ProductDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const product = slug ? getProductBySlug(slug) : undefined;
+  const { language, t } = useLanguage();
+  const product = slug ? getLocalizedProductBySlug(slug, language) : undefined;
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [addedFeedback, setAddedFeedback] = useState(false);
@@ -18,22 +20,22 @@ export const ProductDetail: React.FC = () => {
     return (
       <div className="max-w-[900px] mx-auto px-4 py-20 text-center">
         <h1 className="text-[28px] font-semibold text-[#292929] mb-4">
-          Produit introuvable
+          {t.productDetail.notFoundTitle}
         </h1>
         <p className="text-[#595959] mb-6">
-          Ce produit n’est plus disponible ou l’adresse est incorrecte.
+          {t.productDetail.notFoundText}
         </p>
         <Link
           to="/boutique"
           className="inline-block px-6 py-3 bg-[#FC8920] hover:bg-[#292929] text-white font-semibold rounded transition-colors"
         >
-          Retour à la boutique
+          {t.productDetail.backToShop}
         </Link>
       </div>
     );
   }
 
-  const related = getRelatedProducts(product, 4);
+  const related = getLocalizedRelatedProducts(product, language, 4);
 
   const handleAddToCart = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +52,7 @@ export const ProductDetail: React.FC = () => {
           align="left"
           light={false}
           items={[
-            { label: 'Accueil', path: '/' },
+            { label: t.common.home, path: '/' },
             {
               label: product.categoryName,
               path: `/type-de-chauffage/${product.category}`,
@@ -65,7 +67,7 @@ export const ProductDetail: React.FC = () => {
         <div className="relative border border-[#d5d5d5] rounded-[10px] overflow-hidden bg-[#f7f7f7] aspect-square">
           {!product.inStock && (
             <span className="absolute top-4 left-4 z-10 bg-[#292929] text-white text-[12px] font-bold uppercase px-3 py-1.5 rounded">
-              EN RUPTURE
+              {t.common.outOfStockBadge}
             </span>
           )}
           <img
@@ -78,7 +80,7 @@ export const ProductDetail: React.FC = () => {
         {/* Product Info & Add to Cart */}
         <div>
           <p className="text-[13px] font-medium text-[#595959] mb-2">
-            Catégorie :{' '}
+            {t.productDetail.categoryLabel}{' '}
             <Link
               to={`/type-de-chauffage/${product.category}`}
               className="text-[#FC8920] font-semibold hover:underline"
@@ -112,15 +114,13 @@ export const ProductDetail: React.FC = () => {
           <div className="mb-6 bg-[#f7f7f7] border border-[#dcdcdc] p-4 rounded">
             <div className="inline-flex items-center gap-2 bg-[#FC8920] text-black font-bold text-[14px] px-2.5 py-1 mb-2">
               <Info className="w-4 h-4 shrink-0" />
-              <span>Information sur les commandes</span>
+              <span>{t.common.orderNoticeTitle}</span>
             </div>
             <p className="text-[13px] text-[#292929] font-medium mb-1">
-              Merci de prendre en compte les indications suivantes avant de passer commande sur le site :
+              {t.common.orderNoticeIntro}
             </p>
             <ul className="list-disc pl-5 text-[13px] text-[#595959]">
-              <li>
-                Les commandes de pellets et de bois en vrac ne peuvent pas faire parties de la même commande. Il faudra passer 2 commandes le cas échéant.
-              </li>
+              <li>{t.common.orderNoticeRule}</li>
             </ul>
           </div>
 
@@ -130,7 +130,7 @@ export const ProductDetail: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  aria-label="Diminuer la quantité"
+                  aria-label={t.common.decreaseQty}
                   className="w-10 h-11 bg-[#f7f7f7] hover:bg-[#e9e9e9] text-[#292929] font-semibold cursor-pointer"
                 >
                   -
@@ -143,13 +143,13 @@ export const ProductDetail: React.FC = () => {
                   onChange={(e) =>
                     setQuantity(Math.max(1, parseInt(e.target.value || '1', 10)))
                   }
-                  aria-label="Quantité"
+                  aria-label={t.common.quantity}
                   className="w-14 h-11 text-center text-[15px] font-semibold text-[#292929] focus:outline-none tabular-nums"
                 />
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.min(99, q + 1))}
-                  aria-label="Augmenter la quantité"
+                  aria-label={t.common.increaseQty}
                   className="w-10 h-11 bg-[#f7f7f7] hover:bg-[#e9e9e9] text-[#292929] font-semibold cursor-pointer"
                 >
                   +
@@ -163,21 +163,21 @@ export const ProductDetail: React.FC = () => {
                 {addedFeedback ? (
                   <>
                     <Check className="w-4 h-4" />
-                    Ajouté au panier
+                    {t.common.addedToCart}
                   </>
                 ) : (
-                  'Ajouter au panier'
+                  t.common.addToCart
                 )}
               </button>
             </form>
           ) : (
             <div className="p-4 border border-[#dcdcdc] rounded bg-[#f7f7f7] text-[14px] text-[#292929]">
-              <p className="font-semibold mb-2">Produit actuellement en rupture de stock.</p>
+              <p className="font-semibold mb-2">{t.productDetail.outOfStockBoxTitle}</p>
               <Link
                 to="/contact"
                 className="text-[#FC8920] font-semibold hover:underline"
               >
-                Nous contacter pour connaître la date de réapprovisionnement »
+                {t.productDetail.outOfStockContactLink}
               </Link>
             </div>
           )}
@@ -188,7 +188,7 @@ export const ProductDetail: React.FC = () => {
       {related.length > 0 && (
         <section className="mt-16 pt-10 border-t border-[#dcdcdc]">
           <h2 className="text-[24px] font-semibold text-[#292929] mb-8">
-            Produits similaires
+            {t.productDetail.relatedProducts}
           </h2>
           <ProductGrid products={related} />
         </section>

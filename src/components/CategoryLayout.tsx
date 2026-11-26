@@ -1,6 +1,7 @@
 import React from 'react';
 import { Info } from 'lucide-react';
 import { CategoryMeta, Product } from '../types';
+import { useLanguage } from '../hooks/useLanguage';
 import { PageBanner } from './PageBanner';
 import { ProductGrid } from './ProductGrid';
 
@@ -10,14 +11,16 @@ interface CategoryLayoutProps {
 }
 
 export const CategoryLayout: React.FC<CategoryLayoutProps> = ({ meta, products }) => {
+  const { t } = useLanguage();
+
   return (
     <div>
       <PageBanner
         title={meta.title}
         backgroundImage={meta.bannerImage}
         breadcrumbs={[
-          { label: 'Accueil', path: '/' },
-          { label: 'Boutique', path: '/boutique' },
+          { label: t.common.home, path: '/' },
+          { label: t.common.shop, path: '/boutique' },
           { label: meta.name },
         ]}
       />
@@ -35,11 +38,13 @@ export const CategoryLayout: React.FC<CategoryLayoutProps> = ({ meta, products }
       <section className="py-[50px] px-4 sm:px-6 max-w-[1140px] mx-auto">
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-[14px] text-[#595959]">
           <p>
-            Affichage de tous les <span className="font-semibold text-[#292929] tabular-nums">{products.length}</span> résultats
+            {t.category.showingAllPrefix}{' '}
+            <span className="font-semibold text-[#292929] tabular-nums">{products.length}</span>{' '}
+            {t.category.resultsSuffix}
           </p>
           <div className="inline-flex items-center gap-2 text-[13px] bg-[#f7f7f7] border border-[#dcdcdc] px-3.5 py-2 rounded">
             <Info className="w-4 h-4 text-[#FC8920] shrink-0" />
-            <span>Les commandes de pellets et de bois en vrac doivent être passées séparément.</span>
+            <span>{t.common.orderNoticeShort}</span>
           </div>
         </div>
 

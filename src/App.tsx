@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
@@ -143,12 +144,14 @@ const AppShell: React.FC = () => {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <CartProvider>
-          <AppShell />
-        </CartProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <LanguageProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <AppShell />
+          </CartProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </LanguageProvider>
   );
 }
